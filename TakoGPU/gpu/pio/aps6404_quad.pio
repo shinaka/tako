@@ -1,0 +1,24 @@
+.program aps6404_quad
+.side_set 1 opt                 // SCK pin is side-set
+
+.wrap_target
+entry_point:
+    pull block                  // get command/address/data
+    set x, 31                   // 32 bits of addr/command
+    
+cmd_loop:                       // command phase
+    out pins, 1                 side 0 // output one bit
+    nop                         side 1  // clock high
+    jmp x-- cmd_loop            // loop
+    
+    set pindirs, 4              // switch to quad mode output
+    pull block                  // get data length - 1
+    mov y, osr                  // save to y reg
+    
+data_loop:                      // data phase (quad)
+    out pins, 4  side 0         // output 4 bits at once
+    nop         side 1          // clock high
+    jmp y-- data_loop           // loop
+    
+set pindirs, 1                  // quad off
+.wrap

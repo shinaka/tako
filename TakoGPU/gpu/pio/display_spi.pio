@@ -1,0 +1,12 @@
+.program display_spi
+.side_set 1 opt                 // SCK pin is side-set
+
+.wrap_target
+entry_point:
+    pull block                  // get data from FIFO
+    set x, 7                    // 8 bits
+bitloop:
+    out pins, 1                 side 0 // output bit, SCK low
+    nop                         side 1 // SCK high
+    jmp x-- bitloop             // loop
+.wrap

@@ -1,0 +1,24 @@
+.program sprite_compose
+.side_set 1 opt // sync pin
+
+.wrap_target
+public entry_point:
+    pull block                  side 0 // get pattern data
+                                
+    // get color index
+    mov isr, osr                side 0 // copy data
+    in y, 4                     side 0 // get color index (4 bits)
+
+    // skip if transparent (index 0)
+    jmp !y next_pixel           side 0
+
+    // look up color in palette
+    mov x, y                    side 0  // store color index
+    in pins, 4                  side 0  // get palette number
+    in null, 4                  side 0  // shift isr left by 4 bits
+    mov isr, x                  side 0  // add color index
+    out null, 16                side 1  // output color to frame buffer
+
+next_pixel:
+    jmp !osre entry_point       side 0 // next pixel
+.wrap

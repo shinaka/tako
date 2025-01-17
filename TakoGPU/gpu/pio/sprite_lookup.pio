@@ -1,0 +1,54 @@
+.program sprite_lookup
+.side_set 1 opt                 // sync pin
+
+.wrap_target
+public entry_point:
+    pull block                  // get current scanline
+    mov y, osr                  // store in Y
+    
+    // clean sprite count
+    set x, 0                    side 0
+
+lookup_loop:
+    pull block                  side 0 // get sprite data
+    
+    // extract Y position and size
+    mov isr, osr                side 0 // copy to isr
+    in y, 16                    side 0 // get Y pos
+
+    // skip 40 bits but can only do max 32 in one op
+    in null, 32                 side 0 // skip 32 bits
+    in null, 8                  side 0 // skip 8 bits
+    in x, 2                     side 0 // get size (2 bits)
+    
+    // calculate sprite height (8 << size)
+    set y, 8                    side 0 // set base height
+    jmp x--, size_1             side 0 // jump based on size
+    jmp done                    side 0 // size 0: height is 8
+
+size_1:
+    mov y, y                    side 0 // Y+Y (16)
+    jmp x--, size_2             side 0
+    jmp done                    side 0 // size 1: height is 16
+
+size_2:
+    mov y, y                    side 0 // Y+Y (32)
+    jmp x--, size_3             side 0
+    jmp done                    side 0 // size 2: height is 32
+
+size_3:
+    mov y, y                    side 0 // Double Y (64)
+
+done:   
+    // check if sprite intersects line
+    jmp !osre valid_sprite      side 0
+    jmp next_sprite             side 0
+
+valid_sprite:
+    // store sprite index
+    mov isr, x                  side 1   // X as index
+    push block                  side 1   // push to pattern fetcher
+    
+next_sprite:
+    jmp x-- lookup_loop         side 0  // check next sprite
+.wrap

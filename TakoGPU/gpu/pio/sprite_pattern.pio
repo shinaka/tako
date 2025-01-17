@@ -1,0 +1,28 @@
+.program sprite_pattern
+.side_set 1 opt
+
+.wrap_target
+public entry_point:
+    pull block                  side 0 // get sprite index
+    
+    // calculate pattern address
+    mov x, osr                  side 0 // copy index to X
+    set y, 3                    side 0 // set up multiply count (3 -> 8)
+
+multiply_loop:
+    jmp !y done                 side 0 // if Y is 0, we're done
+    mov isr, x                  side 0 // copy X to isr
+    mov x, isr                  side 0 // double X (shift left by 1 since you can't shift isr reg)
+    jmp y-- multiply_loop       side 0 // decrement Y and loop
+
+done:
+    mov isr, x                  side 0 // move result to isr
+    
+    // fetch sequence
+    mov osr, isr                side 1 // setup address
+    out pindirs, 32             side 0 // output address
+    
+    // read pattern data
+    in pins, 32                 side 0  
+    push block                  side 1 // push to composer
+.wrap

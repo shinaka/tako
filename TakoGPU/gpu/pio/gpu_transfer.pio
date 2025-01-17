@@ -1,0 +1,22 @@
+.program gpu_transfer
+.side_set 1 opt                 // WAIT pin is side-set pin
+
+.wrap_target
+public send:
+    pull block                  // get byte from FIFO
+    set x, 7                    // 8 bits per byte
+
+bitloop_out:
+    out pins, 1                 side 0 // output one bit, WAIT low
+    jmp x-- bitloop_out         // loop until byte complete
+    irq 0                       side 1 // byte complete, WAIT high
+    
+public receive:                 // receiving data
+    set x, 7                    side 0 // 8 bits per byte
+
+bitloop_in:
+    in pins, 1                  side 0 // input one bit
+    jmp x-- bitloop_in          // loop until complete
+    push block                  side 1 // push byte to FIFO
+    irq 1                       // signal byte received
+.wrap
